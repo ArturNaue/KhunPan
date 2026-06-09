@@ -46,10 +46,10 @@ export const EXIT_COLS = [1, 2];
 //   D: id6  (2×1 horizontal, einzigartig)
 export const INITIAL_BLOCKS: Block[] = [
   { id: 1,  shape: '2x2', row: 3, col: 1 },  // Hiker (rows 3-4, cols 1-2)
-  { id: 2,  shape: '1x1', row: 4, col: 0 },  // 1×1 unten-links
-  { id: 3,  shape: '1x1', row: 4, col: 3 },  // 1×1 unten-rechts
-  { id: 4,  shape: '1x2', row: 2, col: 0 },  // 1×2 mitte-links  (rows 2-3)
-  { id: 5,  shape: '1x2', row: 2, col: 3 },  // 1×2 mitte-rechts (rows 2-3)
+  { id: 2,  shape: '1x1', row: 2, col: 0 },  // 1×1 mitte-links  (Zeile 2)
+  { id: 3,  shape: '1x1', row: 2, col: 3 },  // 1×1 mitte-rechts (Zeile 2)
+  { id: 4,  shape: '1x2', row: 3, col: 0 },  // 1×2 unten-links  (rows 3-4, flankiert Hiker)
+  { id: 5,  shape: '1x2', row: 3, col: 3 },  // 1×2 unten-rechts (rows 3-4, flankiert Hiker)
   { id: 6,  shape: '2x1', row: 2, col: 1 },  // 2×1 horizontal   (row 2, cols 1-2)
   { id: 7,  shape: '1x1', row: 1, col: 1 },  // 1×1 oben-mitte-links
   { id: 8,  shape: '1x1', row: 1, col: 2 },  // 1×1 oben-mitte-rechts
