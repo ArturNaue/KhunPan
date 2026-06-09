@@ -1,6 +1,6 @@
 // v1.1.0 | 2026-06-09 MEZ
 import { GameState, GameSnapshot, INITIAL_BLOCKS, currentSnapshot } from './types';
-import { canMove, moveAllTheWay, isWon, solve, findBlockInDirection } from './logic';
+import { canMove, moveAllTheWay, isWon, findBlockInDirection } from './logic';
 import type { Direction } from './types';
 
 const STORAGE_KEY = 'khunpan_best';
@@ -38,7 +38,7 @@ export type GameAction =
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET' }
-  | { type: 'SOLVE' }
+  | { type: 'SET_HINT_PATH'; path: Block[][] }
   | { type: 'HINT_NEXT' }
   | { type: 'CLEAR_HINT' };
 
@@ -119,10 +119,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'RESET':
       return { ...makeInitialState(), bestMoves: loadBest() };
 
-    case 'SOLVE': {
-      const path = solve(snap.blocks);
-      if (!path) return state;
-      const snapPath: GameSnapshot[] = path.map((blocks, i) => ({
+    case 'SET_HINT_PATH': {
+      const snapPath: GameSnapshot[] = action.path.map((blocks, i) => ({
         blocks, moves: snap.moves + i, selectedId: null,
       }));
       return { ...state, hintPath: snapPath, hintStep: 0 };

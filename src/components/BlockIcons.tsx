@@ -236,17 +236,23 @@ export function MountainIcon({ width, height }: { width: number; height: number 
   );
 }
 
-// ─── Route icon dispatch ──────────────────────────────────────────────────────
+// ─── Icon-Zuweisung (neues korrektes Layout) ─────────────────────────────────
+// id1 (2×2):          Hiker
+// id2, id3 (1×1 row4): Kleine Blöcke unten → Edelweiss
+// id4, id5 (1×2 rows 2-3): Mittlere Vertikale → Wasserfall / Kahler Baum
+// id6 (2×1 row2):     Horizontal → Fluss
+// id7, id8 (1×1 row1): Kleine Blöcke oben → Schneeflake
+// id9, id10 (1×2 rows 0-1): Obere Vertikale → Tannenwald
 export function BlockIcon({ id, w, h }: { id: number; w: number; h: number }) {
   if (id === 1)  return <HikerIcon w={w} h={h} />;
-  if (id === 2)  return <RiverIcon w={w} h={h} />;
-  if (id === 3)  return <BareTreeIcon w={w} h={h} />;
-  if (id === 4)  return <PineForestIcon w={w} h={h} />;
-  if (id === 5)  return <SmallForestIcon w={w} h={h} />;
-  if (id === 6)  return <SmallForestIcon w={w} h={h} />;
-  if (id === 7)  return <EdelweissIcon w={w} h={h} />;
-  if (id === 8)  return <EdelweissIcon w={w} h={h} />;
-  if (id === 9)  return <RockCliffIcon w={w} h={h} />;
-  if (id === 10) return <ShrubIcon w={w} h={h} />;
+  if (id === 2)  return <EdelweissIcon w={w} h={h} />;
+  if (id === 3)  return <EdelweissIcon w={w} h={h} />;
+  if (id === 4)  return <RockCliffIcon w={w} h={h} />;
+  if (id === 5)  return <BareTreeIcon w={w} h={h} />;
+  if (id === 6)  return <RiverIcon w={w} h={h} />;
+  if (id === 7)  return <ShrubIcon w={w} h={h} />;
+  if (id === 8)  return <ShrubIcon w={w} h={h} />;
+  if (id === 9)  return <PineForestIcon w={w} h={h} />;
+  if (id === 10) return <PineForestIcon w={w} h={h} />;
   return null;
 }

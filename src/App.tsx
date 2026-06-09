@@ -1,5 +1,5 @@
-// v1.1.0 | 2026-06-09 MEZ
-import React, { useReducer, useState, useCallback } from 'react';
+// v1.2.0 | 2026-06-09 MEZ
+import React, { useReducer, useState, useCallback, useRef } from 'react';
 import { reducer, makeInitialState } from './game/reducer';
 import { currentSnapshot } from './game/types';
 import { GameBoard } from './components/GameBoard';
@@ -12,14 +12,36 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, undefined, makeInitialState);
   const [solving, setSolving] = useState(false);
   const snap = currentSnapshot(state);
+  const workerRef = useRef<Worker | null>(null);
 
   const handleSolve = useCallback(() => {
+    // Vorherigen Worker abbrechen falls noch laufend
+    workerRef.current?.terminate();
     setSolving(true);
-    setTimeout(() => {
-      dispatch({ type: 'SOLVE' });
+
+    const worker = new Worker(
+      new URL('./utils/solver.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    workerRef.current = worker;
+
+    worker.onmessage = (e: MessageEvent) => {
+      worker.terminate();
+      workerRef.current = null;
       setSolving(false);
-    }, 10);
-  }, []);
+      if (e.data) {
+        dispatch({ type: 'SET_HINT_PATH', path: e.data });
+      }
+    };
+
+    worker.onerror = () => {
+      worker.terminate();
+      workerRef.current = null;
+      setSolving(false);
+    };
+
+    worker.postMessage(snap.blocks);
+  }, [snap.blocks]);
 
   return (
     <div id="khunpan-app" style={{

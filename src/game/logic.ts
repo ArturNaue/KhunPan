@@ -42,11 +42,6 @@ export function canMove(block: Block, dir: Direction, blocks: Block[]): boolean 
   const newRow = block.row + dr;
   const newCol = block.col + dc;
 
-  // Hiker exit: allowed to go above row 0 if cols match exit
-  if (block.id === 1 && dir === 'UP' && newRow === -1) {
-    return block.col === EXIT_COLS[0];
-  }
-
   if (newRow < 0 || newCol < 0) return false;
   if (newRow + rows > BOARD_ROWS || newCol + cols > BOARD_COLS) return false;
 
@@ -86,10 +81,12 @@ export function moveAllTheWay(blockId: number, dir: Direction, blocks: Block[]):
   return current;
 }
 
+// Gewinn: Hiker hat Ausgang oben erreicht (row=-1, also Uint8=255 nach Underflow)
+// ODER Hiker steht bei row=0 und kann nach oben (wird vom Reducer abgefangen)
 export function isWon(blocks: Block[]): boolean {
   const hiker = blocks.find(b => b.id === 1);
   if (!hiker) return false;
-  return hiker.row <= -1 && hiker.col === EXIT_COLS[0];
+  return hiker.row <= 0 && hiker.col === EXIT_COLS[0];
 }
 
 export function getValidDirections(block: Block, blocks: Block[]): Direction[] {
