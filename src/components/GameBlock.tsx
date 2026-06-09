@@ -1,4 +1,4 @@
-// v1.1.0 | 2026-06-09 MEZ
+// v1.2.0 | 2026-06-09 MEZ
 import React, { useRef, useState } from 'react';
 import { Block, Direction } from '../game/types';
 import { shapeDims, maxStepsInDir } from '../game/logic';
@@ -38,6 +38,7 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
   const [rowSpan, colSpan] = shapeDims(block.shape);
   const dragRef = useRef<DragState | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [noTransition, setNoTransition] = useState(false);
 
   const w = colSpan * cellSize;
   const h = rowSpan * cellSize;
@@ -93,6 +94,10 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
       return;
     }
 
+    // Transition deaktivieren: Block soll direkt am Zielfeld erscheinen (kein Sprung zurück)
+    setNoTransition(true);
+    setOffset({ x: 0, y: 0 });
+
     if (d.axis === 'h') {
       const steps = Math.round(offset.x / cellSize);
       if (steps > 0)  onMove(block.id, 'RIGHT', steps);
@@ -102,7 +107,9 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
       if (steps > 0)  onMove(block.id, 'DOWN', steps);
       else if (steps < 0) onMove(block.id, 'UP', -steps);
     }
-    setOffset({ x: 0, y: 0 });
+
+    // Transition nach zwei Frames wieder aktivieren (für Tastatur-Bewegungen)
+    requestAnimationFrame(() => requestAnimationFrame(() => setNoTransition(false)));
   }
 
   const iconPad = 8;
@@ -135,9 +142,9 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
         userSelect: 'none',
         touchAction: 'none',
         zIndex: (offset.x !== 0 || offset.y !== 0) ? 20 : isSelected ? 10 : 2,
-        transition: (offset.x === 0 && offset.y === 0)
-          ? 'top 0.12s ease, left 0.12s ease, box-shadow 0.15s'
-          : 'none',
+        transition: (noTransition || offset.x !== 0 || offset.y !== 0)
+          ? 'none'
+          : 'top 0.12s ease, left 0.12s ease, box-shadow 0.15s',
         // Wood grain via repeating gradient
         backgroundImage: [
           `repeating-linear-gradient(108deg, transparent, transparent 7px, rgba(0,0,0,0.03) 7px, rgba(0,0,0,0.03) 8px)`,
