@@ -1,6 +1,6 @@
-// v1.0.0 | 2026-06-09 MEZ
+// v1.1.0 | 2026-06-09 MEZ
 import { GameState, GameSnapshot, INITIAL_BLOCKS, currentSnapshot } from './types';
-import { canMove, applyMove, isWon, solve } from './logic';
+import { canMove, moveAllTheWay, isWon, solve, getValidDirections } from './logic';
 import type { Direction } from './types';
 
 const STORAGE_KEY = 'khunpan_best';
@@ -12,13 +12,12 @@ function loadBest(): number | null {
 
 function saveBest(moves: number): void {
   const current = loadBest();
-  if (current === null || moves < current) {
+  if (current === null || moves < current)
     localStorage.setItem(STORAGE_KEY, String(moves));
-  }
 }
 
 function makeInitialSnapshot(): GameSnapshot {
-  return { blocks: INITIAL_BLOCKS, moves: 0, selectedId: null };
+  return { blocks: INITIAL_BLOCKS, moves: 0, selectedId: 1 }; // hiker pre-selected
 }
 
 export function makeInitialState(): GameState {
@@ -35,7 +34,7 @@ export function makeInitialState(): GameState {
 export type GameAction =
   | { type: 'SELECT'; blockId: number }
   | { type: 'MOVE_SELECTED'; dir: Direction }
-  | { type: 'MOVE_BLOCK'; blockId: number; dir: Direction }
+  | { type: 'MOVE_BLOCK'; blockId: number; dir: Direction; steps: number }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET' }
@@ -43,93 +42,95 @@ export type GameAction =
   | { type: 'HINT_NEXT' }
   | { type: 'CLEAR_HINT' };
 
+function setSelected(state: GameState, id: number | null): GameState {
+  const snap = currentSnapshot(state);
+  const newSnap: GameSnapshot = { ...snap, selectedId: id };
+  const newHistory = state.history.map((s, i) => i === state.historyIndex ? newSnap : s);
+  return { ...state, history: newHistory };
+}
+
+function nextMovableBlock(blocks: GameSnapshot['blocks'], currentId: number | null): number | null {
+  const movable = blocks.filter(b => getValidDirections(b, blocks).length > 0);
+  if (movable.length === 0) return null;
+  const idx = movable.findIndex(b => b.id === currentId);
+  return movable[(idx + 1) % movable.length].id;
+}
+
+function commitMove(state: GameState, newBlocks: GameSnapshot['blocks'], selectedId: number | null): GameState {
+  const snap = currentSnapshot(state);
+  const newMoves = snap.moves + 1;
+  const won = isWon(newBlocks);
+  if (won) saveBest(newMoves);
+  const newSnap: GameSnapshot = { blocks: newBlocks, moves: newMoves, selectedId };
+  const history = [...state.history.slice(0, state.historyIndex + 1), newSnap];
+  return {
+    ...state, history,
+    historyIndex: state.historyIndex + 1,
+    won,
+    bestMoves: won ? loadBest() : state.bestMoves,
+    hintPath: null, hintStep: 0,
+  };
+}
+
 export function reducer(state: GameState, action: GameAction): GameState {
   const snap = currentSnapshot(state);
 
   switch (action.type) {
-    case 'SELECT': {
-      const newSnap: GameSnapshot = { ...snap, selectedId: action.blockId === snap.selectedId ? null : action.blockId };
-      const history = state.history.slice(0, state.historyIndex + 1);
-      // Don't push to history for selection – just update current
-      const newHistory = [...history.slice(0, -1), newSnap];
-      return { ...state, history: newHistory };
-    }
+    case 'SELECT':
+      return setSelected(state, action.blockId === snap.selectedId ? null : action.blockId);
 
     case 'MOVE_SELECTED': {
-      if (snap.selectedId === null) return state;
       const block = snap.blocks.find(b => b.id === snap.selectedId);
-      if (!block || !canMove(block, action.dir, snap.blocks)) return state;
-      const newBlocks = applyMove(block, action.dir, snap.blocks);
-      const won = isWon(newBlocks);
-      const newSnap: GameSnapshot = {
-        blocks: newBlocks,
-        moves: snap.moves + 1,
-        selectedId: snap.selectedId,
-      };
-      if (won) saveBest(newSnap.moves);
-      const history = [...state.history.slice(0, state.historyIndex + 1), newSnap];
-      return {
-        ...state,
-        history,
-        historyIndex: state.historyIndex + 1,
-        won,
-        bestMoves: won ? loadBest() : state.bestMoves,
-        hintPath: null,
-        hintStep: 0,
-      };
+      if (!block) {
+        // Nothing selected – select hiker
+        return setSelected(state, 1);
+      }
+      if (!canMove(block, action.dir, snap.blocks)) {
+        // Can't move → cycle to next movable block
+        const nextId = nextMovableBlock(snap.blocks, snap.selectedId);
+        return setSelected(state, nextId);
+      }
+      // Move all the way to the next obstacle
+      const newBlocks = moveAllTheWay(block.id, action.dir, snap.blocks);
+      return commitMove(state, newBlocks, block.id);
     }
 
     case 'MOVE_BLOCK': {
       const block = snap.blocks.find(b => b.id === action.blockId);
-      if (!block || !canMove(block, action.dir, snap.blocks)) return state;
-      const newBlocks = applyMove(block, action.dir, snap.blocks);
-      const won = isWon(newBlocks);
-      const newSnap: GameSnapshot = {
-        blocks: newBlocks,
-        moves: snap.moves + 1,
-        selectedId: action.blockId,
-      };
-      if (won) saveBest(newSnap.moves);
-      const history = [...state.history.slice(0, state.historyIndex + 1), newSnap];
-      return {
-        ...state,
-        history,
-        historyIndex: state.historyIndex + 1,
-        won,
-        bestMoves: won ? loadBest() : state.bestMoves,
-        hintPath: null,
-        hintStep: 0,
-      };
+      if (!block) return state;
+      let newBlocks = snap.blocks;
+      for (let i = 0; i < action.steps; i++) {
+        const b = newBlocks.find(x => x.id === action.blockId)!;
+        if (!canMove(b, action.dir, newBlocks)) break;
+        newBlocks = newBlocks.map(x =>
+          x.id === action.blockId
+            ? { ...x, row: x.row + (action.dir === 'DOWN' ? 1 : action.dir === 'UP' ? -1 : 0),
+                      col: x.col + (action.dir === 'RIGHT' ? 1 : action.dir === 'LEFT' ? -1 : 0) }
+            : x
+        );
+      }
+      if (newBlocks === snap.blocks) return state;
+      return commitMove(state, newBlocks, action.blockId);
     }
 
-    case 'UNDO': {
+    case 'UNDO':
       if (state.historyIndex === 0) return state;
       return { ...state, historyIndex: state.historyIndex - 1, won: false, hintPath: null };
-    }
 
     case 'REDO': {
       if (state.historyIndex >= state.history.length - 1) return state;
-      const nextIndex = state.historyIndex + 1;
-      const nextSnap = state.history[nextIndex];
-      const won = isWon(nextSnap.blocks);
-      return { ...state, historyIndex: nextIndex, won };
+      const next = state.history[state.historyIndex + 1];
+      return { ...state, historyIndex: state.historyIndex + 1, won: isWon(next.blocks) };
     }
 
-    case 'RESET': {
-      return {
-        ...makeInitialState(),
-        bestMoves: loadBest(),
-      };
-    }
+    case 'RESET':
+      return { ...makeInitialState(), bestMoves: loadBest() };
 
     case 'SOLVE': {
       const path = solve(snap.blocks);
       if (!path) return state;
-      // Convert path (Block[][]) to GameSnapshot[]
       const snapPath: GameSnapshot[] = path.map((blocks, i) => ({
-        blocks,
-        moves: snap.moves + i,
-        selectedId: null,
+        blocks, moves: snap.moves + i, selectedId: null,
       }));
       return { ...state, hintPath: snapPath, hintStep: 0 };
     }
@@ -142,11 +143,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       const won = isWon(hintSnap.blocks);
       const history = [...state.history.slice(0, state.historyIndex + 1), hintSnap];
       return {
-        ...state,
-        history,
+        ...state, history,
         historyIndex: state.historyIndex + 1,
-        hintStep: nextStep,
-        won,
+        hintStep: nextStep, won,
         bestMoves: won ? loadBest() : state.bestMoves,
       };
     }

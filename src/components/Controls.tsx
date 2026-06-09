@@ -1,4 +1,4 @@
-// v1.0.0 | 2026-06-09 MEZ
+// v1.1.0 | 2026-06-09 MEZ
 import React from 'react';
 import { GameState, currentSnapshot } from '../game/types';
 import { GameAction } from '../game/reducer';
@@ -10,47 +10,61 @@ interface Props {
   solving: boolean;
 }
 
+const BTN: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 8,
+  border: '1px solid rgba(0,0,0,0.35)',
+  cursor: 'pointer',
+  fontSize: 13,
+  fontFamily: 'inherit',
+  fontWeight: 600,
+  letterSpacing: '0.02em',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 4px rgba(0,0,0,0.4)',
+};
+
 export function Controls({ state, dispatch, onSolve, solving }: Props) {
   const snap = currentSnapshot(state);
   const canUndo = state.historyIndex > 0;
   const canRedo = state.historyIndex < state.history.length - 1;
   const hasHint = state.hintPath !== null;
 
-  const btnBase: React.CSSProperties = {
-    padding: '8px 16px',
-    borderRadius: 8,
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 13,
-    fontFamily: 'inherit',
-    fontWeight: 600,
-    letterSpacing: '0.03em',
-    transition: 'opacity 0.15s, transform 0.1s',
-  };
-
   return (
-    <div id="khunpan-controls" style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'stretch', minWidth: 160 }}>
-      {/* Stats */}
+    <div id="khunpan-controls" style={{
+      display: 'flex', flexDirection: 'column', gap: 12,
+      alignItems: 'stretch', minWidth: 160,
+      paddingTop: 8,
+    }}>
+      {/* Stats card */}
       <div style={{
-        background: 'rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 16px',
+        background: 'rgba(196,145,74,0.12)',
+        border: '1px solid rgba(196,145,74,0.25)',
+        borderRadius: 12, padding: '14px 18px',
         display: 'flex', flexDirection: 'column', gap: 6,
       }}>
-        <div style={{ color: '#90A4AE', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Züge</div>
-        <div style={{ color: '#ECEFF1', fontSize: 28, fontWeight: 700, lineHeight: 1 }}>{snap.moves}</div>
+        <div style={{ color: '#8A7055', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Züge</div>
+        <div style={{ color: '#E8C87A', fontSize: 32, fontWeight: 700, lineHeight: 1 }}>{snap.moves}</div>
         {state.bestMoves !== null && (
-          <div style={{ color: '#FDD835', fontSize: 12 }}>Bestzeit: {state.bestMoves} Züge</div>
+          <div style={{ color: '#A89060', fontSize: 12 }}>Bestzeit: {state.bestMoves} Züge</div>
         )}
       </div>
 
       {/* Undo / Redo */}
       <div style={{ display: 'flex', gap: 8 }}>
         <button
-          style={{ ...btnBase, flex: 1, background: canUndo ? '#455A64' : '#263238', color: canUndo ? '#ECEFF1' : '#546E7A', opacity: canUndo ? 1 : 0.5 }}
+          style={{ ...BTN, flex: 1,
+            background: canUndo ? '#5C3310' : '#2A1A08',
+            color: canUndo ? '#E8C87A' : '#5A4020',
+            opacity: canUndo ? 1 : 0.5,
+          }}
           disabled={!canUndo}
           onClick={() => dispatch({ type: 'UNDO' })}
         >↩ Undo</button>
         <button
-          style={{ ...btnBase, flex: 1, background: canRedo ? '#455A64' : '#263238', color: canRedo ? '#ECEFF1' : '#546E7A', opacity: canRedo ? 1 : 0.5 }}
+          style={{ ...BTN, flex: 1,
+            background: canRedo ? '#5C3310' : '#2A1A08',
+            color: canRedo ? '#E8C87A' : '#5A4020',
+            opacity: canRedo ? 1 : 0.5,
+          }}
           disabled={!canRedo}
           onClick={() => dispatch({ type: 'REDO' })}
         >↪ Redo</button>
@@ -59,7 +73,7 @@ export function Controls({ state, dispatch, onSolve, solving }: Props) {
       {/* Hint */}
       {!hasHint ? (
         <button
-          style={{ ...btnBase, background: solving ? '#263238' : '#1565C0', color: '#BBDEFB' }}
+          style={{ ...BTN, background: solving ? '#2A1A08' : '#1A3A5C', color: '#90C8E8' }}
           onClick={onSolve}
           disabled={solving}
         >
@@ -68,12 +82,12 @@ export function Controls({ state, dispatch, onSolve, solving }: Props) {
       ) : (
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            style={{ ...btnBase, flex: 1, background: '#1565C0', color: '#BBDEFB' }}
+            style={{ ...BTN, flex: 1, background: '#1A3A5C', color: '#90C8E8' }}
             onClick={() => dispatch({ type: 'HINT_NEXT' })}
             disabled={state.hintStep >= (state.hintPath?.length ?? 0) - 1}
           >▶ Tipp</button>
           <button
-            style={{ ...btnBase, background: '#37474F', color: '#90A4AE' }}
+            style={{ ...BTN, background: '#3A2010', color: '#8A7055' }}
             onClick={() => dispatch({ type: 'CLEAR_HINT' })}
           >✕</button>
         </div>
@@ -81,14 +95,18 @@ export function Controls({ state, dispatch, onSolve, solving }: Props) {
 
       {/* Reset */}
       <button
-        style={{ ...btnBase, background: '#B71C1C', color: '#FFCDD2', marginTop: 4 }}
+        style={{ ...BTN, background: '#5C1A10', color: '#F0A090', marginTop: 4 }}
         onClick={() => dispatch({ type: 'RESET' })}
       >↺ Neu starten</button>
 
-      {/* Keyboard help */}
-      <div style={{ color: '#546E7A', fontSize: 11, lineHeight: 1.5, marginTop: 4 }}>
+      {/* Keyboard hints */}
+      <div style={{
+        color: '#5A4020', fontSize: 11, lineHeight: 1.7,
+        borderTop: '1px solid rgba(196,145,74,0.12)',
+        paddingTop: 10, marginTop: 2,
+      }}>
         <div>1–9 = Block wählen</div>
-        <div>↑↓←→ = Bewegen</div>
+        <div>↑↓←→ = Schieben</div>
         <div>Drag / Swipe = Touch</div>
       </div>
     </div>
