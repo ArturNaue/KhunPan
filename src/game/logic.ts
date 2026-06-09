@@ -1,4 +1,4 @@
-// v1.1.0 | 2026-06-09 MEZ
+// v1.2.0 | 2026-06-09 MEZ
 import { Block, BlockShape, Direction, BOARD_COLS, BOARD_ROWS, EXIT_COLS } from './types';
 
 export function shapeDims(shape: BlockShape): [number, number] {
@@ -94,6 +94,38 @@ export function isWon(blocks: Block[]): boolean {
 
 export function getValidDirections(block: Block, blocks: Block[]): Direction[] {
   return (['UP', 'DOWN', 'LEFT', 'RIGHT'] as Direction[]).filter(d => canMove(block, d, blocks));
+}
+
+// Findet den nächsten Block in der gegebenen Richtung (gleiche Zeilen-/Spalten-Überlappung).
+// Wird verwendet um beim Tastendruck in eine blockierte Richtung den nächsten Block zu selektieren.
+export function findBlockInDirection(block: Block, dir: Direction, blocks: Block[]): Block | null {
+  const [rows, cols] = shapeDims(block.shape);
+  const rowMin = block.row, rowMax = block.row + rows - 1;
+  const colMin = block.col, colMax = block.col + cols - 1;
+
+  const candidates = blocks.filter(b => {
+    if (b.id === block.id) return false;
+    const [br, bc] = shapeDims(b.shape);
+    const bRowMin = b.row, bRowMax = b.row + br - 1;
+    const bColMin = b.col, bColMax = b.col + bc - 1;
+
+    switch (dir) {
+      case 'LEFT':  return bColMax < colMin && bRowMax >= rowMin && bRowMin <= rowMax;
+      case 'RIGHT': return bColMin > colMax && bRowMax >= rowMin && bRowMin <= rowMax;
+      case 'UP':    return bRowMax < rowMin && bColMax >= colMin && bColMin <= colMax;
+      case 'DOWN':  return bRowMin > rowMax && bColMax >= colMin && bColMin <= colMax;
+    }
+  });
+
+  if (candidates.length === 0) return null;
+
+  // Nächstgelegenen Block wählen
+  switch (dir) {
+    case 'LEFT':  return candidates.reduce((a, b) => (a.col + shapeDims(a.shape)[1]) > (b.col + shapeDims(b.shape)[1]) ? a : b);
+    case 'RIGHT': return candidates.reduce((a, b) => a.col < b.col ? a : b);
+    case 'UP':    return candidates.reduce((a, b) => (a.row + shapeDims(a.shape)[0]) > (b.row + shapeDims(b.shape)[0]) ? a : b);
+    case 'DOWN':  return candidates.reduce((a, b) => a.row < b.row ? a : b);
+  }
 }
 
 // ─── BFS Solver ──────────────────────────────────────────────────────────────

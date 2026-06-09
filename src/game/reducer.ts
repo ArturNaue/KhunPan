@@ -1,6 +1,6 @@
 // v1.1.0 | 2026-06-09 MEZ
 import { GameState, GameSnapshot, INITIAL_BLOCKS, currentSnapshot } from './types';
-import { canMove, moveAllTheWay, isWon, solve, getValidDirections } from './logic';
+import { canMove, moveAllTheWay, isWon, solve, findBlockInDirection } from './logic';
 import type { Direction } from './types';
 
 const STORAGE_KEY = 'khunpan_best';
@@ -49,12 +49,6 @@ function setSelected(state: GameState, id: number | null): GameState {
   return { ...state, history: newHistory };
 }
 
-function nextMovableBlock(blocks: GameSnapshot['blocks'], currentId: number | null): number | null {
-  const movable = blocks.filter(b => getValidDirections(b, blocks).length > 0);
-  if (movable.length === 0) return null;
-  const idx = movable.findIndex(b => b.id === currentId);
-  return movable[(idx + 1) % movable.length].id;
-}
 
 function commitMove(state: GameState, newBlocks: GameSnapshot['blocks'], selectedId: number | null): GameState {
   const snap = currentSnapshot(state);
@@ -81,16 +75,15 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
     case 'MOVE_SELECTED': {
       const block = snap.blocks.find(b => b.id === snap.selectedId);
-      if (!block) {
-        // Nothing selected – select hiker
-        return setSelected(state, 1);
-      }
+      if (!block) return setSelected(state, 1);
+
       if (!canMove(block, action.dir, snap.blocks)) {
-        // Can't move → cycle to next movable block
-        const nextId = nextMovableBlock(snap.blocks, snap.selectedId);
-        return setSelected(state, nextId);
+        // Kann nicht bewegt werden → nächsten Block in dieser Richtung selektieren
+        const nextBlock = findBlockInDirection(block, action.dir, snap.blocks);
+        if (nextBlock) return setSelected(state, nextBlock.id);
+        return state; // kein Block in diese Richtung → nichts tun
       }
-      // Move all the way to the next obstacle
+      // Block bis zum nächsten Hindernis schieben
       const newBlocks = moveAllTheWay(block.id, action.dir, snap.blocks);
       return commitMove(state, newBlocks, block.id);
     }
