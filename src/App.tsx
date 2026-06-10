@@ -1,5 +1,5 @@
 // v1.2.0 | 2026-06-09 MEZ
-import { useReducer, useState, useCallback, useRef } from 'react';
+import { useReducer, useState, useCallback, useEffect, useRef } from 'react';
 import { reducer, makeInitialState } from './game/reducer';
 import { currentSnapshot } from './game/types';
 import { GameBoard } from './components/GameBoard';
@@ -8,6 +8,7 @@ import { WinOverlay } from './components/WinOverlay';
 import type { Block } from './game/types';
 
 const CELL_SIZE = 80;
+const SOLVE_STEP_MS = 180;
 type SolverMode = 'hint' | 'solve';
 
 export default function App() {
@@ -15,10 +16,41 @@ export default function App() {
   const [solverMode, setSolverMode] = useState<SolverMode | null>(null);
   const snap = currentSnapshot(state);
   const workerRef = useRef<Worker | null>(null);
+  const solveTimerRef = useRef<number | null>(null);
+
+  const clearSolveAnimation = useCallback(() => {
+    if (solveTimerRef.current !== null) {
+      window.clearTimeout(solveTimerRef.current);
+      solveTimerRef.current = null;
+    }
+  }, []);
+
+  const playSolutionPath = useCallback((path: Block[][]) => {
+    dispatch({ type: 'SET_HINT_PATH', path });
+    if (path.length <= 1) {
+      setSolverMode(null);
+      return;
+    }
+
+    let nextStep = 1;
+    const advance = () => {
+      dispatch({ type: 'HINT_NEXT' });
+      nextStep++;
+      if (nextStep < path.length) {
+        solveTimerRef.current = window.setTimeout(advance, SOLVE_STEP_MS);
+      } else {
+        solveTimerRef.current = null;
+        setSolverMode(null);
+      }
+    };
+
+    solveTimerRef.current = window.setTimeout(advance, SOLVE_STEP_MS);
+  }, []);
 
   const runSolver = useCallback((mode: SolverMode) => {
     // Vorherigen Worker abbrechen falls noch laufend
     workerRef.current?.terminate();
+    clearSolveAnimation();
     setSolverMode(mode);
 
     const worker = new Worker(
@@ -27,16 +59,19 @@ export default function App() {
     );
     workerRef.current = worker;
 
-    worker.onmessage = (e: MessageEvent) => {
+    worker.onmessage = (e: MessageEvent<Block[][] | null>) => {
       worker.terminate();
       workerRef.current = null;
-      setSolverMode(null);
-      const path = e.data as Block[][] | null;
+      const path = e.data;
       if (path) {
-        dispatch(mode === 'hint'
-          ? { type: 'SET_HINT_PATH', path }
-          : { type: 'APPLY_SOLUTION_PATH', path }
-        );
+        if (mode === 'hint') {
+          dispatch({ type: 'SET_HINT_PATH', path });
+          setSolverMode(null);
+        } else {
+          playSolutionPath(path);
+        }
+      } else {
+        setSolverMode(null);
       }
     };
 
@@ -47,7 +82,14 @@ export default function App() {
     };
 
     worker.postMessage(snap.blocks);
-  }, [snap.blocks]);
+  }, [clearSolveAnimation, playSolutionPath, snap.blocks]);
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+      clearSolveAnimation();
+    };
+  }, [clearSolveAnimation]);
 
   const handleHint = useCallback(() => runSolver('hint'), [runSolver]);
   const handleSolve = useCallback(() => runSolver('solve'), [runSolver]);

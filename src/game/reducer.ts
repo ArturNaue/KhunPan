@@ -39,7 +39,6 @@ export type GameAction =
   | { type: 'REDO' }
   | { type: 'RESET' }
   | { type: 'SET_HINT_PATH'; path: Block[][] }
-  | { type: 'APPLY_SOLUTION_PATH'; path: Block[][] }
   | { type: 'HINT_NEXT' }
   | { type: 'CLEAR_HINT' };
 
@@ -120,24 +119,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
         blocks, moves: snap.moves + i, selectedId: null,
       }));
       return { ...state, hintPath: snapPath, hintStep: 0 };
-    }
-
-    case 'APPLY_SOLUTION_PATH': {
-      const solutionSteps = action.path.slice(1);
-      if (solutionSteps.length === 0) return state;
-      const solutionSnaps: GameSnapshot[] = solutionSteps.map((blocks, i) => ({
-        blocks, moves: snap.moves + i + 1, selectedId: null,
-      }));
-      const history = [...state.history.slice(0, state.historyIndex + 1), ...solutionSnaps];
-      const finalSnap = solutionSnaps[solutionSnaps.length - 1];
-      return {
-        ...state,
-        history,
-        historyIndex: history.length - 1,
-        won: isWon(finalSnap.blocks),
-        hintPath: null,
-        hintStep: 0,
-      };
     }
 
     case 'HINT_NEXT': {

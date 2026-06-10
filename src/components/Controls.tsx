@@ -56,18 +56,18 @@ export function Controls({ state, dispatch, onHint, onSolve, solverMode }: Props
           style={{ ...BTN, flex: 1,
             background: canUndo ? '#5C3310' : '#2A1A08',
             color: canUndo ? '#E8C87A' : '#5A4020',
-            opacity: canUndo ? 1 : 0.5,
+            opacity: canUndo && !isWorking ? 1 : 0.5,
           }}
-          disabled={!canUndo}
+          disabled={!canUndo || isWorking}
           onClick={() => dispatch({ type: 'UNDO' })}
         >↩ Undo</button>
         <button
           style={{ ...BTN, flex: 1,
             background: canRedo ? '#5C3310' : '#2A1A08',
             color: canRedo ? '#E8C87A' : '#5A4020',
-            opacity: canRedo ? 1 : 0.5,
+            opacity: canRedo && !isWorking ? 1 : 0.5,
           }}
-          disabled={!canRedo}
+          disabled={!canRedo || isWorking}
           onClick={() => dispatch({ type: 'REDO' })}
         >↪ Redo</button>
       </div>
@@ -86,11 +86,12 @@ export function Controls({ state, dispatch, onHint, onSolve, solverMode }: Props
           <button
             style={{ ...BTN, flex: 1, background: '#1A3A5C', color: '#90C8E8' }}
             onClick={() => dispatch({ type: 'HINT_NEXT' })}
-            disabled={state.hintStep >= (state.hintPath?.length ?? 0) - 1}
+            disabled={isWorking || state.hintStep >= (state.hintPath?.length ?? 0) - 1}
           >▶ Tipp</button>
           <button
             style={{ ...BTN, background: '#3A2010', color: '#8A7055' }}
             onClick={() => dispatch({ type: 'CLEAR_HINT' })}
+            disabled={isWorking}
           >✕</button>
         </div>
       )}
@@ -105,8 +106,9 @@ export function Controls({ state, dispatch, onHint, onSolve, solverMode }: Props
 
       {/* Reset */}
       <button
-        style={{ ...BTN, background: '#5C1A10', color: '#F0A090', marginTop: 4 }}
+        style={{ ...BTN, background: '#5C1A10', color: '#F0A090', marginTop: 4, opacity: isWorking ? 0.5 : 1 }}
         onClick={() => dispatch({ type: 'RESET' })}
+        disabled={isWorking}
       >↺ Neu starten</button>
 
       {/* Keyboard hints */}
