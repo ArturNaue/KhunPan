@@ -7,7 +7,9 @@ import { Controls } from './components/Controls';
 import { WinOverlay } from './components/WinOverlay';
 import type { Block } from './game/types';
 
-const CELL_SIZE = 80;
+const MAX_CELL_SIZE = 80;
+const MIN_CELL_SIZE = 52;
+const FRAME_WIDTH = 14;
 const SOLVE_STEP_MS = 180;
 type SolverMode = 'hint' | 'solve';
 type SolvePhase = 'calculating' | 'playing' | 'paused' | 'final';
@@ -17,8 +19,38 @@ interface SolvePlayback {
   nextStep: number;
 }
 
+function calculateCellSize(): number {
+  if (typeof window === 'undefined') return MAX_CELL_SIZE;
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const widthLimit = (viewportWidth - 32 - FRAME_WIDTH * 2) / 4;
+
+  if (viewportWidth >= 760) {
+    return Math.max(MIN_CELL_SIZE, Math.floor(Math.min(MAX_CELL_SIZE, widthLimit)));
+  }
+
+  const shortViewport = viewportHeight < 720;
+
+  const horizontalPadding = shortViewport ? 24 : 32;
+  const verticalPadding = shortViewport ? 24 : 48;
+  const headerEstimate = shortViewport ? 46 : 62;
+  const layoutGap = shortViewport ? 14 : 28;
+  const controlsEstimate = shortViewport ? 188 : 218;
+
+  const mobileWidthLimit = (viewportWidth - horizontalPadding - FRAME_WIDTH * 2) / 4;
+  const heightLimit = (
+    viewportHeight - verticalPadding - headerEstimate - layoutGap - controlsEstimate - FRAME_WIDTH * 2
+  ) / 5.75;
+
+  const size = Math.floor(Math.min(MAX_CELL_SIZE, mobileWidthLimit, heightLimit));
+  return Math.max(MIN_CELL_SIZE, size);
+}
+
 export default function App() {
   const [state, dispatch] = useReducer(reducer, undefined, makeInitialState);
+  const [cellSize, setCellSize] = useState(calculateCellSize);
+  const [isNarrow, setIsNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 600);
   const [solverMode, setSolverMode] = useState<SolverMode | null>(null);
   const [solvePhase, setSolvePhase] = useState<SolvePhase | null>(null);
   const [solverMessage, setSolverMessage] = useState<string | null>(null);
@@ -26,6 +58,23 @@ export default function App() {
   const workerRef = useRef<Worker | null>(null);
   const solveTimerRef = useRef<number | null>(null);
   const solvePlaybackRef = useRef<SolvePlayback | null>(null);
+  const compactLayout = isNarrow || cellSize < 72;
+
+  useEffect(() => {
+    function updateCellSize() {
+      setCellSize(calculateCellSize());
+      setIsNarrow(window.innerWidth < 600);
+    }
+
+    window.addEventListener('resize', updateCellSize);
+    window.visualViewport?.addEventListener('resize', updateCellSize);
+    updateCellSize();
+
+    return () => {
+      window.removeEventListener('resize', updateCellSize);
+      window.visualViewport?.removeEventListener('resize', updateCellSize);
+    };
+  }, []);
 
   const clearSolveAnimation = useCallback(() => {
     if (solveTimerRef.current !== null) {
@@ -177,19 +226,19 @@ export default function App() {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: compactLayout ? 'flex-start' : 'center',
       fontFamily: "'Exo 2', sans-serif",
-      padding: '24px 16px',
+      padding: compactLayout ? '12px 12px 16px' : '24px 16px',
     }}>
       {/* Header */}
-      <div id="khunpan-header" style={{ textAlign: 'center', marginBottom: 28 }}>
+      <div id="khunpan-header" style={{ textAlign: 'center', marginBottom: compactLayout ? 14 : 28 }}>
         <h1 style={{
           color: '#E8C87A',
-          fontSize: 30, fontWeight: 700,
+          fontSize: compactLayout ? 24 : 30, fontWeight: 700,
           letterSpacing: '0.08em', margin: 0,
           textShadow: '0 2px 8px rgba(0,0,0,0.6)',
         }}>⛰ Khun Pan</h1>
-        <p style={{ color: '#8A7055', fontSize: 13, margin: '4px 0 0' }}>
+        <p style={{ color: '#8A7055', fontSize: compactLayout ? 12 : 13, margin: '4px 0 0' }}>
           Führe den Wanderer zum Gipfel
         </p>
       </div>
@@ -198,13 +247,14 @@ export default function App() {
       <div id="khunpan-layout" style={{
         display: 'flex',
         flexDirection: 'row',
-        gap: 28,
+        gap: compactLayout ? 14 : 28,
         alignItems: 'flex-start',
         flexWrap: 'wrap',
         justifyContent: 'center',
+        width: '100%',
       }}>
-        <div style={{ paddingTop: CELL_SIZE * 0.75 }}>
-          <GameBoard state={state} dispatch={dispatch} cellSize={CELL_SIZE} />
+        <div style={{ paddingTop: cellSize * 0.75 }}>
+          <GameBoard state={state} dispatch={dispatch} cellSize={cellSize} />
         </div>
         <Controls
           state={state}
@@ -214,6 +264,7 @@ export default function App() {
           solverMode={solverMode}
           solvePhase={solvePhase}
           solverMessage={solverMessage}
+          compact={compactLayout}
         />
       </div>
 
