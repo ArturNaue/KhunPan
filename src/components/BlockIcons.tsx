@@ -1,6 +1,5 @@
 // v1.1.0 | 2026-06-09 MEZ
 // Carved-wood SVG icons – dark engraved lines on warm wood background
-import React from 'react';
 
 const CARVE = '#3E1F00';   // engraved line color
 const SNOW  = '#EEF2F7';  // snow / highlight
@@ -236,13 +235,11 @@ export function MountainIcon({ width, height }: { width: number; height: number 
   );
 }
 
-// ─── Icon-Zuweisung (neues korrektes Layout) ─────────────────────────────────
-// id1 (2×2):          Hiker
-// id2, id3 (1×1 row4): Kleine Blöcke unten → Edelweiss
-// id4, id5 (1×2 rows 2-3): Mittlere Vertikale → Wasserfall / Kahler Baum
-// id6 (2×1 row2):     Horizontal → Fluss
-// id7, id8 (1×1 row1): Kleine Blöcke oben → Schneeflake
-// id9, id10 (1×2 rows 0-1): Obere Vertikale → Tannenwald
+// ─── Icon-Zuweisung zur fachlichen Start-Konstellation ───────────────────────
+// fachlich 1: id1                  Hauptblock → Hiker
+// fachlich 2: id6                  horizontaler 2er → Fluss
+// fachlich 3: id4, id5, id9, id10  vertikale 1×2-Blöcke → Fels/Baum/Wald
+// fachlich 4: id2, id3, id7, id8   1×1-Blöcke → Edelweiss/Strauch
 export function BlockIcon({ id, w, h }: { id: number; w: number; h: number }) {
   if (id === 1)  return <HikerIcon w={w} h={h} />;
   if (id === 2)  return <EdelweissIcon w={w} h={h} />;

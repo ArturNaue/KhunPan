@@ -1,5 +1,5 @@
 // v1.2.0 | 2026-06-09 MEZ
-import React, { useReducer, useState, useCallback, useRef } from 'react';
+import { useReducer, useState, useCallback, useRef } from 'react';
 import { reducer, makeInitialState } from './game/reducer';
 import { currentSnapshot } from './game/types';
 import { GameBoard } from './components/GameBoard';

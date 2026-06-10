@@ -1,7 +1,7 @@
 // v1.1.0 | 2026-06-09 MEZ
 import { GameState, GameSnapshot, INITIAL_BLOCKS, currentSnapshot } from './types';
 import { canMove, moveAllTheWay, isWon, findBlockInDirection } from './logic';
-import type { Direction } from './types';
+import type { Block, Direction } from './types';
 
 const STORAGE_KEY = 'khunpan_best';
 

@@ -35,25 +35,28 @@ export const BOARD_COLS = 4;
 export const BOARD_ROWS = 5;
 export const EXIT_COLS = [1, 2];
 
-// Korrektes Start-Layout – 180°-Rotation des knobelholz.de-Originals.
-// Original (exit unten): Hiker rows 0-1, B1×2 an rows 1-2 & 3-4, leer row 4 cols 1-2.
-// Rotiert  (exit oben):  Hiker rows 3-4, B1×2 an rows 0-1 & 2-3, leer row 0 cols 1-2.
+// Fachliche Start-Konstellation:
+//   1 = id1                  2×2 Hauptblock bei row 3, col 1
+//   2 = id6                  horizontaler 2er bei row 2, col 1
+//   3 = id4, id5, id9, id10  vier vertikale 1×2-Blöcke
+//   4 = id2, id3, id7, id8   vier 1×1-Blöcke
+// Frei: row 0 col 1 und row 0 col 2 = Ausgang oben Mitte.
 //
 // Solver-Gruppen (gleiche Gruppe = austauschbar im kanonischen Key):
-//   A: id1  (2×2 Hiker, einzigartig)
-//   B: id2, id3, id7, id8  (1×1, alle gleich)
-//   C: id4, id5, id9, id10 (1×2, alle gleich)
-//   D: id6  (2×1 horizontal, einzigartig)
+//   A: id1                  fachlich 1, 2×2 Hauptblock, einzigartig
+//   B: id2, id3, id7, id8   fachlich 4, 1×1, austauschbar
+//   C: id4, id5, id9, id10  fachlich 3, vertikale 1×2, austauschbar
+//   D: id6                  fachlich 2, horizontaler 2er, einzigartig
 export const INITIAL_BLOCKS: Block[] = [
-  { id: 1,  shape: '2x2', row: 3, col: 1 },  // Hiker (rows 3-4, cols 1-2)
-  { id: 2,  shape: '1x1', row: 2, col: 0 },  // 1×1 mitte-links  (Zeile 2)
-  { id: 3,  shape: '1x1', row: 2, col: 3 },  // 1×1 mitte-rechts (Zeile 2)
-  { id: 4,  shape: '1x2', row: 3, col: 0 },  // 1×2 unten-links  (rows 3-4, flankiert Hiker)
-  { id: 5,  shape: '1x2', row: 3, col: 3 },  // 1×2 unten-rechts (rows 3-4, flankiert Hiker)
-  { id: 6,  shape: '2x1', row: 2, col: 1 },  // 2×1 horizontal   (row 2, cols 1-2)
-  { id: 7,  shape: '1x1', row: 1, col: 1 },  // 1×1 oben-mitte-links
-  { id: 8,  shape: '1x1', row: 1, col: 2 },  // 1×1 oben-mitte-rechts
-  { id: 9,  shape: '1x2', row: 0, col: 0 },  // 1×2 oben-links  (rows 0-1)
-  { id: 10, shape: '1x2', row: 0, col: 3 },  // 1×2 oben-rechts (rows 0-1)
+  { id: 1,  shape: '2x2', row: 3, col: 1 },  // fachlich 1: Hauptblock
+  { id: 2,  shape: '1x1', row: 0, col: 0 },  // fachlich 4: 1×1 oben links
+  { id: 3,  shape: '1x1', row: 0, col: 3 },  // fachlich 4: 1×1 oben rechts
+  { id: 4,  shape: '1x2', row: 3, col: 0 },  // fachlich 3: vertikal unten links
+  { id: 5,  shape: '1x2', row: 3, col: 3 },  // fachlich 3: vertikal unten rechts
+  { id: 6,  shape: '2x1', row: 2, col: 1 },  // fachlich 2: horizontaler 2er
+  { id: 7,  shape: '1x1', row: 1, col: 1 },  // fachlich 4: 1×1 mitte links
+  { id: 8,  shape: '1x1', row: 1, col: 2 },  // fachlich 4: 1×1 mitte rechts
+  { id: 9,  shape: '1x2', row: 1, col: 0 },  // fachlich 3: vertikal oben links
+  { id: 10, shape: '1x2', row: 1, col: 3 },  // fachlich 3: vertikal oben rechts
   // LEER: (0,1) und (0,2) = Ausgang oben Mitte
 ];

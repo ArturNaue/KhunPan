@@ -9,7 +9,8 @@ const SHAPES: Record<string, Shape> = {
 };
 
 // Gruppen identischer Blöcke (austauschbar → sortiert in State-Key)
-// A: id1 (Hiker), B: 1×1-Blöcke, C: 1×2-Blöcke, D: id6 (2×1)
+// A: fachlich 1 / id1, B: fachlich 4 / 1×1-Blöcke,
+// C: fachlich 3 / vertikale 1×2-Blöcke, D: fachlich 2 / id6.
 function blockGroup(id: number): string {
   if (id === 1) return 'A';
   if (id === 6) return 'D';
