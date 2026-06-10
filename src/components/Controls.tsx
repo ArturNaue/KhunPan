@@ -9,6 +9,8 @@ interface Props {
   onHint: () => void;
   onSolve: () => void;
   solverMode: 'hint' | 'solve' | null;
+  solvePhase: 'calculating' | 'playing' | 'paused' | 'final' | null;
+  solverMessage: string | null;
 }
 
 const BTN: React.CSSProperties = {
@@ -23,12 +25,20 @@ const BTN: React.CSSProperties = {
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 4px rgba(0,0,0,0.4)',
 };
 
-export function Controls({ state, dispatch, onHint, onSolve, solverMode }: Props) {
+export function Controls({ state, dispatch, onHint, onSolve, solverMode, solvePhase, solverMessage }: Props) {
   const snap = currentSnapshot(state);
   const canUndo = state.historyIndex > 0;
   const canRedo = state.historyIndex < state.history.length - 1;
   const hasHint = state.hintPath !== null;
   const isWorking = solverMode !== null;
+  const isSolving = solverMode === 'solve';
+  const solveLabel = solvePhase === 'paused'
+    ? '▶ Weiter'
+    : solvePhase === 'final'
+      ? '✓ Abschließen'
+      : solvePhase === 'calculating' || solvePhase === 'playing'
+        ? '⏳ Löse…'
+        : '✓ Lösen';
 
   return (
     <div id="khunpan-controls" style={{
@@ -99,10 +109,21 @@ export function Controls({ state, dispatch, onHint, onSolve, solverMode }: Props
       <button
         style={{ ...BTN, background: solverMode === 'solve' ? '#2A1A08' : '#315C1A', color: '#BEE890' }}
         onClick={onSolve}
-        disabled={isWorking || state.won}
+        disabled={(isWorking && !isSolving) || state.won || solvePhase === 'calculating'}
       >
-        {solverMode === 'solve' ? '⏳ Löse…' : '✓ Lösen'}
+        {solveLabel}
       </button>
+
+      {solverMessage && (
+        <div style={{
+          color: '#D9B06D',
+          fontSize: 12,
+          lineHeight: 1.4,
+          padding: '0 2px',
+        }}>
+          {solverMessage}
+        </div>
+      )}
 
       {/* Reset */}
       <button
