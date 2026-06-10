@@ -27,6 +27,19 @@ const WOOD: Record<number, string> = {
   10: '#956838',
 };
 
+const BLOCK_LABELS: Record<number, string> = {
+  1: 'Hauptblock',
+  2: 'kleiner Block oben links',
+  3: 'kleiner Block oben rechts',
+  4: 'vertikaler Block unten links',
+  5: 'vertikaler Block unten rechts',
+  6: 'horizontaler Block',
+  7: 'kleiner Block mitte links',
+  8: 'kleiner Block mitte rechts',
+  9: 'vertikaler Block oben links',
+  10: 'vertikaler Block oben rechts',
+};
+
 interface DragState {
   startX: number; startY: number;
   axis: 'h' | 'v' | null;
@@ -142,15 +155,28 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
     resetDragOffset();
   }
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(block.id);
+    }
+  }
+
   const iconPad = 8;
+  const accessibleName = `${BLOCK_LABELS[block.id] ?? `Block ${block.id}`}${isSelected ? ', ausgewählt' : ''}`;
 
   return (
     <div
       id={`khunpan-block-${block.id}`}
+      role="button"
+      tabIndex={0}
+      aria-label={accessibleName}
+      aria-pressed={isSelected}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onKeyDown={handleKeyDown}
       style={{
         position: 'absolute',
         top:  top  + 3,
@@ -170,6 +196,7 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'grab',
+        outline: 'none',
         userSelect: 'none',
         touchAction: 'none',
         zIndex: (offset.x !== 0 || offset.y !== 0) ? 20 : isSelected ? 10 : 2,

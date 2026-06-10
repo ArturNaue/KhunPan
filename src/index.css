@@ -10,6 +10,12 @@
     color: #ECEFF1;
     -webkit-tap-highlight-color: transparent;
   }
+
+  button:focus-visible,
+  [id^="khunpan-block-"]:focus-visible {
+    outline: 3px solid #FDD835;
+    outline-offset: 3px;
+  }
 }
 
 @layer utilities {

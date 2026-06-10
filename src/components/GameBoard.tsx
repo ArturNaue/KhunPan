@@ -50,7 +50,12 @@ export function GameBoard({ state, dispatch, cellSize }: Props) {
   const exitNotchH = FRAME_W + 4;
 
   return (
-    <div id="khunpan-board-wrapper" style={{ position: 'relative', display: 'inline-block' }}>
+    <div
+      id="khunpan-board-wrapper"
+      role="group"
+      aria-label="Khun Pan Spielfeld"
+      style={{ position: 'relative', display: 'inline-block' }}
+    >
       {/* Mountain decoration above exit */}
       <div style={{
         position: 'absolute',

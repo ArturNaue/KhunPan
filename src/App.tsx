@@ -198,6 +198,15 @@ export default function App() {
   }, [clearSolveAnimation]);
 
   const handleHint = useCallback(() => runSolver('hint'), [runSolver]);
+  const handleCancelSolve = useCallback(() => {
+    workerRef.current?.terminate();
+    workerRef.current = null;
+    clearSolveAnimation();
+    dispatch({ type: 'CLEAR_HINT' });
+    resetSolverState();
+    setSolverMessage('Lösen abgebrochen.');
+  }, [clearSolveAnimation, resetSolverState]);
+
   const handleSolve = useCallback(() => {
     if (solverMode !== 'solve') {
       runSolver('solve');
@@ -261,6 +270,7 @@ export default function App() {
           dispatch={dispatch}
           onHint={handleHint}
           onSolve={handleSolve}
+          onCancelSolve={handleCancelSolve}
           solverMode={solverMode}
           solvePhase={solvePhase}
           solverMessage={solverMessage}
