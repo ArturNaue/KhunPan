@@ -4,8 +4,11 @@ import type { Block, Direction } from '../game/types';
 import { BOARD_COLS, BOARD_ROWS, EXIT_COLS } from '../game/types';
 
 type Shape = [number, number];
-const SHAPES: Record<string, Shape> = {
-  '2x2': [2, 2], '2x1': [1, 2], '1x2': [2, 1], '1x1': [1, 1],
+const SHAPES: Record<Block['shape'], Shape> = {
+  square2: [2, 2],
+  horizontal2: [1, 2],
+  vertical2: [2, 1],
+  single: [1, 1],
 };
 
 // Gruppen identischer Blöcke (austauschbar → sortiert in State-Key)
@@ -15,12 +18,12 @@ function blockGroup(id: number): string {
   if (id === 1) return 'A';
   if (id === 6) return 'D';
   const b = INITIAL_SHAPES[id - 1];
-  if (b === '1x1') return 'B';
+  if (b === 'single') return 'B';
   return 'C';
 }
 
 // Wird beim Worker-Start aus den gesendeten Blöcken befüllt
-let INITIAL_SHAPES: string[] = [];
+let INITIAL_SHAPES: Block['shape'][] = [];
 
 function buildGrid(grid: Uint8Array, blocks: Block[]) {
   grid.fill(0);

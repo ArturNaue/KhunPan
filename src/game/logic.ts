@@ -3,10 +3,10 @@ import { Block, BlockShape, Direction, BOARD_COLS, BOARD_ROWS, EXIT_COLS } from 
 
 export function shapeDims(shape: BlockShape): [number, number] {
   switch (shape) {
-    case '2x2': return [2, 2];
-    case '2x1': return [1, 2];
-    case '1x2': return [2, 1];
-    case '1x1': return [1, 1];
+    case 'square2': return [2, 2];
+    case 'horizontal2': return [1, 2];
+    case 'vertical2': return [2, 1];
+    case 'single': return [1, 1];
   }
 }
 
