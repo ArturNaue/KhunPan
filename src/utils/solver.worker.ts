@@ -2,14 +2,7 @@
 // BFS-Solver mit kanonischem State-Key (gleiche Blöcke = austauschbar → 24× weniger States)
 import type { Block, Direction } from '../game/types';
 import { BOARD_COLS, BOARD_ROWS, EXIT_COLS } from '../game/types';
-
-type Shape = [number, number];
-const SHAPES: Record<Block['shape'], Shape> = {
-  square2: [2, 2],
-  horizontal2: [1, 2],
-  vertical2: [2, 1],
-  single: [1, 1],
-};
+import { applyMove, isWon, shapeDims } from '../game/logic';
 
 // Gruppen identischer Blöcke (austauschbar → sortiert in State-Key)
 // A: fachlich 1 / id1, B: fachlich 4 / 1×1-Blöcke,
@@ -30,7 +23,7 @@ function buildGrid(grid: Uint8Array, blocks: Block[]) {
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
     if (b.row < 0 || b.row >= BOARD_ROWS) continue;
-    const [rs, cs] = SHAPES[b.shape];
+    const [rs, cs] = shapeDims(b.shape);
     for (let r = 0; r < rs; r++)
       for (let c = 0; c < cs; c++)
         grid[(b.row + r) * BOARD_COLS + (b.col + c)] = i + 1;
@@ -38,7 +31,7 @@ function buildGrid(grid: Uint8Array, blocks: Block[]) {
 }
 
 function canMove(b: Block, dir: Direction, grid: Uint8Array, idx: number): boolean {
-  const [rs, cs] = SHAPES[b.shape];
+  const [rs, cs] = shapeDims(b.shape);
   let nr = b.row, nc = b.col;
   if (dir === 'UP')    nr--;
   else if (dir === 'DOWN')  nr++;
@@ -55,19 +48,6 @@ function canMove(b: Block, dir: Direction, grid: Uint8Array, idx: number): boole
       if (v !== 0 && v !== idx + 1) return false;
     }
   return true;
-}
-
-function applyMove(blocks: Block[], idx: number, dir: Direction): Block[] {
-  const dr = dir === 'UP' ? -1 : dir === 'DOWN' ? 1 : 0;
-  const dc = dir === 'LEFT' ? -1 : dir === 'RIGHT' ? 1 : 0;
-  return blocks.map((b, i) =>
-    i === idx ? { ...b, row: b.row + dr, col: b.col + dc } : b
-  );
-}
-
-function isWon(blocks: Block[]): boolean {
-  const h = blocks[0]; // Hiker is always index 0
-  return h.row === 0 && h.col === EXIT_COLS[0];
 }
 
 // Kanonischer Key: Blöcke nach Gruppe gruppieren, innerhalb Gruppe sortieren
@@ -113,7 +93,7 @@ self.onmessage = (e: MessageEvent<Block[]>) => {
     for (let i = 0; i < blocks.length; i++) {
       for (const dir of dirs) {
         if (!canMove(blocks[i], dir, grid, i)) continue;
-        const next = applyMove(blocks, i, dir);
+        const next = applyMove(blocks[i], dir, blocks);
         const nextKey = stateKey(next);
         if (visited.has(nextKey)) continue;
         visited.set(nextKey, { blocks: next, parentKey: key });

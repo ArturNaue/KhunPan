@@ -6,8 +6,9 @@ import { GameAction } from '../game/reducer';
 interface Props {
   state: GameState;
   dispatch: React.Dispatch<GameAction>;
+  onHint: () => void;
   onSolve: () => void;
-  solving: boolean;
+  solverMode: 'hint' | 'solve' | null;
 }
 
 const BTN: React.CSSProperties = {
@@ -22,11 +23,12 @@ const BTN: React.CSSProperties = {
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 4px rgba(0,0,0,0.4)',
 };
 
-export function Controls({ state, dispatch, onSolve, solving }: Props) {
+export function Controls({ state, dispatch, onHint, onSolve, solverMode }: Props) {
   const snap = currentSnapshot(state);
   const canUndo = state.historyIndex > 0;
   const canRedo = state.historyIndex < state.history.length - 1;
   const hasHint = state.hintPath !== null;
+  const isWorking = solverMode !== null;
 
   return (
     <div id="khunpan-controls" style={{
@@ -73,11 +75,11 @@ export function Controls({ state, dispatch, onSolve, solving }: Props) {
       {/* Hint */}
       {!hasHint ? (
         <button
-          style={{ ...BTN, background: solving ? '#2A1A08' : '#1A3A5C', color: '#90C8E8' }}
-          onClick={onSolve}
-          disabled={solving}
+          style={{ ...BTN, background: solverMode === 'hint' ? '#2A1A08' : '#1A3A5C', color: '#90C8E8' }}
+          onClick={onHint}
+          disabled={isWorking || state.won}
         >
-          {solving ? '⏳ Berechne…' : '💡 Hinweis'}
+          {solverMode === 'hint' ? '⏳ Berechne…' : '💡 Hinweis'}
         </button>
       ) : (
         <div style={{ display: 'flex', gap: 8 }}>
@@ -92,6 +94,14 @@ export function Controls({ state, dispatch, onSolve, solving }: Props) {
           >✕</button>
         </div>
       )}
+
+      <button
+        style={{ ...BTN, background: solverMode === 'solve' ? '#2A1A08' : '#315C1A', color: '#BEE890' }}
+        onClick={onSolve}
+        disabled={isWorking || state.won}
+      >
+        {solverMode === 'solve' ? '⏳ Löse…' : '✓ Lösen'}
+      </button>
 
       {/* Reset */}
       <button

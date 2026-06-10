@@ -1,6 +1,6 @@
 // v1.1.0 | 2026-06-09 MEZ
 import { GameState, GameSnapshot, INITIAL_BLOCKS, currentSnapshot } from './types';
-import { canMove, moveAllTheWay, isWon, findBlockInDirection } from './logic';
+import { applyMove, canMove, moveAllTheWay, isWon, findBlockInDirection } from './logic';
 import type { Block, Direction } from './types';
 
 const STORAGE_KEY = 'khunpan_best';
@@ -39,6 +39,7 @@ export type GameAction =
   | { type: 'REDO' }
   | { type: 'RESET' }
   | { type: 'SET_HINT_PATH'; path: Block[][] }
+  | { type: 'APPLY_SOLUTION_PATH'; path: Block[][] }
   | { type: 'HINT_NEXT' }
   | { type: 'CLEAR_HINT' };
 
@@ -95,12 +96,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
       for (let i = 0; i < action.steps; i++) {
         const b = newBlocks.find(x => x.id === action.blockId)!;
         if (!canMove(b, action.dir, newBlocks)) break;
-        newBlocks = newBlocks.map(x =>
-          x.id === action.blockId
-            ? { ...x, row: x.row + (action.dir === 'DOWN' ? 1 : action.dir === 'UP' ? -1 : 0),
-                      col: x.col + (action.dir === 'RIGHT' ? 1 : action.dir === 'LEFT' ? -1 : 0) }
-            : x
-        );
+        newBlocks = applyMove(b, action.dir, newBlocks);
       }
       if (newBlocks === snap.blocks) return state;
       return commitMove(state, newBlocks, action.blockId);
@@ -124,6 +120,24 @@ export function reducer(state: GameState, action: GameAction): GameState {
         blocks, moves: snap.moves + i, selectedId: null,
       }));
       return { ...state, hintPath: snapPath, hintStep: 0 };
+    }
+
+    case 'APPLY_SOLUTION_PATH': {
+      const solutionSteps = action.path.slice(1);
+      if (solutionSteps.length === 0) return state;
+      const solutionSnaps: GameSnapshot[] = solutionSteps.map((blocks, i) => ({
+        blocks, moves: snap.moves + i + 1, selectedId: null,
+      }));
+      const history = [...state.history.slice(0, state.historyIndex + 1), ...solutionSnaps];
+      const finalSnap = solutionSnaps[solutionSnaps.length - 1];
+      return {
+        ...state,
+        history,
+        historyIndex: history.length - 1,
+        won: isWon(finalSnap.blocks),
+        hintPath: null,
+        hintStep: 0,
+      };
     }
 
     case 'HINT_NEXT': {

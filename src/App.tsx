@@ -5,19 +5,21 @@ import { currentSnapshot } from './game/types';
 import { GameBoard } from './components/GameBoard';
 import { Controls } from './components/Controls';
 import { WinOverlay } from './components/WinOverlay';
+import type { Block } from './game/types';
 
 const CELL_SIZE = 80;
+type SolverMode = 'hint' | 'solve';
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, undefined, makeInitialState);
-  const [solving, setSolving] = useState(false);
+  const [solverMode, setSolverMode] = useState<SolverMode | null>(null);
   const snap = currentSnapshot(state);
   const workerRef = useRef<Worker | null>(null);
 
-  const handleSolve = useCallback(() => {
+  const runSolver = useCallback((mode: SolverMode) => {
     // Vorherigen Worker abbrechen falls noch laufend
     workerRef.current?.terminate();
-    setSolving(true);
+    setSolverMode(mode);
 
     const worker = new Worker(
       new URL('./utils/solver.worker.ts', import.meta.url),
@@ -28,20 +30,27 @@ export default function App() {
     worker.onmessage = (e: MessageEvent) => {
       worker.terminate();
       workerRef.current = null;
-      setSolving(false);
-      if (e.data) {
-        dispatch({ type: 'SET_HINT_PATH', path: e.data });
+      setSolverMode(null);
+      const path = e.data as Block[][] | null;
+      if (path) {
+        dispatch(mode === 'hint'
+          ? { type: 'SET_HINT_PATH', path }
+          : { type: 'APPLY_SOLUTION_PATH', path }
+        );
       }
     };
 
     worker.onerror = () => {
       worker.terminate();
       workerRef.current = null;
-      setSolving(false);
+      setSolverMode(null);
     };
 
     worker.postMessage(snap.blocks);
   }, [snap.blocks]);
+
+  const handleHint = useCallback(() => runSolver('hint'), [runSolver]);
+  const handleSolve = useCallback(() => runSolver('solve'), [runSolver]);
 
   return (
     <div id="khunpan-app" style={{
@@ -82,8 +91,9 @@ export default function App() {
         <Controls
           state={state}
           dispatch={dispatch}
+          onHint={handleHint}
           onSolve={handleSolve}
-          solving={solving}
+          solverMode={solverMode}
         />
       </div>
 
