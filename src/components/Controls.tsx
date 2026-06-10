@@ -34,7 +34,6 @@ export function Controls({ state, dispatch, onHint, onSolve, onCancelSolve, solv
   const hasHint = state.hintPath !== null;
   const isWorking = solverMode !== null;
   const isSolving = solverMode === 'solve';
-  const showHintControls = !isSolving;
   const solveLabel = solvePhase === 'paused'
     ? '▶ Weiter'
     : solvePhase === 'final'
@@ -104,17 +103,25 @@ export function Controls({ state, dispatch, onHint, onSolve, onCancelSolve, solv
       </div>
 
       {/* Hint */}
-      {showHintControls && (!hasHint ? (
-          <button
-            style={{ ...BTN, padding: compact ? '8px 10px' : BTN.padding, background: solverMode === 'hint' ? '#2A1A08' : '#1A3A5C', color: '#90C8E8' }}
-            onClick={onHint}
-            disabled={isWorking || state.won}
-            aria-label="Hinweis berechnen"
-          >
-            {solverMode === 'hint' ? '⏳ Berechne…' : '💡 Hinweis'}
-          </button>
-        ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
+      {isSolving ? (
+        <button
+          style={{ ...BTN, padding: compact ? '8px 10px' : BTN.padding, background: '#1A3A5C', color: '#90C8E8', opacity: 0.5 }}
+          disabled
+          aria-label="Hinweis während automatischer Lösung nicht verfügbar"
+        >
+          💡 Hinweis
+        </button>
+      ) : !hasHint ? (
+        <button
+          style={{ ...BTN, padding: compact ? '8px 10px' : BTN.padding, background: solverMode === 'hint' ? '#2A1A08' : '#1A3A5C', color: '#90C8E8' }}
+          onClick={onHint}
+          disabled={isWorking || state.won}
+          aria-label="Hinweis berechnen"
+        >
+          {solverMode === 'hint' ? '⏳ Berechne…' : '💡 Hinweis'}
+        </button>
+      ) : (
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
             style={{ ...BTN, flex: 1, padding: compact ? '8px 10px' : BTN.padding, background: '#1A3A5C', color: '#90C8E8' }}
             onClick={() => dispatch({ type: 'HINT_NEXT' })}
@@ -127,8 +134,7 @@ export function Controls({ state, dispatch, onHint, onSolve, onCancelSolve, solv
             disabled={isWorking}
             aria-label="Hinweis schließen"
           >✕</button>
-          </div>
-        )
+        </div>
       )}
 
       <div style={{ display: 'flex', gap: 8 }}>

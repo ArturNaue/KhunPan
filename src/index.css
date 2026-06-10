@@ -16,6 +16,10 @@
     outline: 3px solid #FDD835;
     outline-offset: 3px;
   }
+
+  button:disabled {
+    cursor: default !important;
+  }
 }
 
 @layer utilities {
