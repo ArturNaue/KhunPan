@@ -31,6 +31,8 @@ interface DragState {
   startX: number; startY: number;
   axis: 'h' | 'v' | null;
   maxNegPx: number; maxPosPx: number;
+  offsetX: number; offsetY: number;
+  pointerId: number;
   moved: boolean;
 }
 
@@ -46,18 +48,33 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
   const left = block.col * cellSize;
   const bg   = WOOD[block.id] ?? '#B89060';
 
+  function releasePointerCapture(e: React.PointerEvent) {
+    const el = e.currentTarget as HTMLElement;
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+  }
+
+  function resetDragOffset() {
+    dragRef.current = null;
+    setOffset({ x: 0, y: 0 });
+  }
+
   function handlePointerDown(e: React.PointerEvent) {
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
     onSelect(block.id);
     dragRef.current = {
       startX: e.clientX, startY: e.clientY,
-      axis: null, maxNegPx: 0, maxPosPx: 0, moved: false,
+      axis: null, maxNegPx: 0, maxPosPx: 0,
+      offsetX: 0, offsetY: 0,
+      pointerId: e.pointerId,
+      moved: false,
     };
   }
 
   function handlePointerMove(e: React.PointerEvent) {
     const d = dragRef.current;
     if (!d) return;
+    if (e.pointerId !== d.pointerId) return;
     const dx = e.clientX - d.startX;
     const dy = e.clientY - d.startY;
 
@@ -76,17 +93,23 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
 
     if (d.axis === 'h') {
       const cx = Math.max(-d.maxNegPx, Math.min(d.maxPosPx, dx));
+      d.offsetX = cx;
+      d.offsetY = 0;
       setOffset({ x: cx, y: 0 });
       d.moved = Math.abs(cx) > 4;
     } else if (d.axis === 'v') {
       const cy = Math.max(-d.maxNegPx, Math.min(d.maxPosPx, dy));
+      d.offsetX = 0;
+      d.offsetY = cy;
       setOffset({ x: 0, y: cy });
       d.moved = Math.abs(cy) > 4;
     }
   }
 
-  function handlePointerUp(_e: React.PointerEvent) {
+  function handlePointerUp(e: React.PointerEvent) {
     const d = dragRef.current;
+    if (d && e.pointerId !== d.pointerId) return;
+    releasePointerCapture(e);
     dragRef.current = null;
 
     if (!d || !d.moved || !d.axis) {
@@ -99,17 +122,24 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
     setOffset({ x: 0, y: 0 });
 
     if (d.axis === 'h') {
-      const steps = Math.round(offset.x / cellSize);
+      const steps = Math.round(d.offsetX / cellSize);
       if (steps > 0)  onMove(block.id, 'RIGHT', steps);
       else if (steps < 0) onMove(block.id, 'LEFT', -steps);
     } else {
-      const steps = Math.round(offset.y / cellSize);
+      const steps = Math.round(d.offsetY / cellSize);
       if (steps > 0)  onMove(block.id, 'DOWN', steps);
       else if (steps < 0) onMove(block.id, 'UP', -steps);
     }
 
     // Transition nach zwei Frames wieder aktivieren (für Tastatur-Bewegungen)
     requestAnimationFrame(() => requestAnimationFrame(() => setNoTransition(false)));
+  }
+
+  function handlePointerCancel(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (d && e.pointerId !== d.pointerId) return;
+    releasePointerCapture(e);
+    resetDragOffset();
   }
 
   const iconPad = 8;
@@ -120,6 +150,7 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       style={{
         position: 'absolute',
         top:  top  + 3,
