@@ -1,5 +1,6 @@
 // v1.1.0 | 2026-06-09 MEZ
 // Carved-wood SVG icons – dark engraved lines on warm wood background
+import type { BlockShape } from '../game/types';
 
 const CARVE = '#3E1F00';   // engraved line color
 const SNOW  = '#EEF2F7';  // snow / highlight
@@ -235,21 +236,15 @@ export function MountainIcon({ width, height }: { width: number; height: number 
   );
 }
 
-// ─── Icon-Zuweisung zur fachlichen Start-Konstellation ───────────────────────
-// fachlich 1: id1                  Hauptblock → Hiker
-// fachlich 2: id6                  horizontaler 2er → Fluss
-// fachlich 3: id4, id5, id9, id10  vertikale 1×2-Blöcke → Fels/Baum/Wald
-// fachlich 4: id2, id3, id7, id8   1×1-Blöcke → Edelweiss/Strauch
-export function BlockIcon({ id, w, h }: { id: number; w: number; h: number }) {
+// ─── Icon-Zuweisung nach aktueller Blockform ─────────────────────────────────
+export function BlockIcon({ id, shape, w, h }: { id: number; shape: BlockShape; w: number; h: number }) {
   if (id === 1)  return <HikerIcon w={w} h={h} />;
-  if (id === 2)  return <EdelweissIcon w={w} h={h} />;
-  if (id === 3)  return <EdelweissIcon w={w} h={h} />;
-  if (id === 4)  return <RockCliffIcon w={w} h={h} />;
-  if (id === 5)  return <BareTreeIcon w={w} h={h} />;
-  if (id === 6)  return <RiverIcon w={w} h={h} />;
-  if (id === 7)  return <ShrubIcon w={w} h={h} />;
-  if (id === 8)  return <ShrubIcon w={w} h={h} />;
-  if (id === 9)  return <PineForestIcon w={w} h={h} />;
-  if (id === 10) return <PineForestIcon w={w} h={h} />;
-  return null;
+  if (shape === 'horizontal2') return <RiverIcon w={w} h={h} />;
+  if (shape === 'vertical2') {
+    if (id % 3 === 0) return <PineForestIcon w={w} h={h} />;
+    if (id % 3 === 1) return <RockCliffIcon w={w} h={h} />;
+    return <BareTreeIcon w={w} h={h} />;
+  }
+  if (id === 2 || id === 3) return <EdelweissIcon w={w} h={h} />;
+  return <ShrubIcon w={w} h={h} />;
 }

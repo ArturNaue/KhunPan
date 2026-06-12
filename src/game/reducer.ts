@@ -1,30 +1,38 @@
 // v1.1.0 | 2026-06-09 MEZ
-import { GameState, GameSnapshot, INITIAL_BLOCKS, currentSnapshot } from './types';
+import { GameState, GameSnapshot, currentSnapshot } from './types';
 import { applyMove, canMove, moveAllTheWay, isWon, findBlockInDirection } from './logic';
 import type { Block, Direction } from './types';
+import { DEFAULT_START_LAYOUT, getStartLayout } from './startLayouts';
 
 const STORAGE_KEY = 'khunpan_best';
 
-function loadBest(): number | null {
-  const v = localStorage.getItem(STORAGE_KEY);
+function bestKey(startLayoutId: string): string {
+  return `${STORAGE_KEY}_${startLayoutId}`;
+}
+
+function loadBest(startLayoutId: string): number | null {
+  if (typeof localStorage === 'undefined') return null;
+  const v = localStorage.getItem(bestKey(startLayoutId));
   return v ? parseInt(v, 10) : null;
 }
 
-function saveBest(moves: number): void {
-  const current = loadBest();
+function saveBest(startLayoutId: string, moves: number): void {
+  if (typeof localStorage === 'undefined') return;
+  const current = loadBest(startLayoutId);
   if (current === null || moves < current)
-    localStorage.setItem(STORAGE_KEY, String(moves));
+    localStorage.setItem(bestKey(startLayoutId), String(moves));
 }
 
-function makeInitialSnapshot(): GameSnapshot {
-  return { blocks: INITIAL_BLOCKS, moves: 0, selectedId: 1 }; // hiker pre-selected
+function makeInitialSnapshot(startLayoutId: string): GameSnapshot {
+  return { blocks: getStartLayout(startLayoutId).blocks, moves: 0, selectedId: 1 }; // hiker pre-selected
 }
 
-export function makeInitialState(): GameState {
+export function makeInitialState(startLayoutId = DEFAULT_START_LAYOUT.id): GameState {
   return {
-    history: [makeInitialSnapshot()],
+    startLayoutId,
+    history: [makeInitialSnapshot(startLayoutId)],
     historyIndex: 0,
-    bestMoves: loadBest(),
+    bestMoves: loadBest(startLayoutId),
     won: false,
     hintPath: null,
     hintStep: 0,
@@ -38,6 +46,7 @@ export type GameAction =
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET' }
+  | { type: 'SET_START_LAYOUT'; startLayoutId: string }
   | { type: 'SET_HINT_PATH'; path: Block[][] }
   | { type: 'HINT_NEXT' }
   | { type: 'CLEAR_HINT' };
@@ -54,14 +63,14 @@ function commitMove(state: GameState, newBlocks: GameSnapshot['blocks'], selecte
   const snap = currentSnapshot(state);
   const newMoves = snap.moves + 1;
   const won = isWon(newBlocks);
-  if (won) saveBest(newMoves);
+  if (won) saveBest(state.startLayoutId, newMoves);
   const newSnap: GameSnapshot = { blocks: newBlocks, moves: newMoves, selectedId };
   const history = [...state.history.slice(0, state.historyIndex + 1), newSnap];
   return {
     ...state, history,
     historyIndex: state.historyIndex + 1,
     won,
-    bestMoves: won ? loadBest() : state.bestMoves,
+    bestMoves: won ? loadBest(state.startLayoutId) : state.bestMoves,
     hintPath: null, hintStep: 0,
   };
 }
@@ -112,7 +121,10 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESET':
-      return { ...makeInitialState(), bestMoves: loadBest() };
+      return makeInitialState(state.startLayoutId);
+
+    case 'SET_START_LAYOUT':
+      return makeInitialState(action.startLayoutId);
 
     case 'SET_HINT_PATH': {
       const snapPath: GameSnapshot[] = action.path.map((blocks, i) => ({
@@ -132,7 +144,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         ...state, history,
         historyIndex: state.historyIndex + 1,
         hintStep: nextStep, won,
-        bestMoves: won ? loadBest() : state.bestMoves,
+        bestMoves: won ? loadBest(state.startLayoutId) : state.bestMoves,
       };
     }
 

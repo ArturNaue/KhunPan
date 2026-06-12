@@ -27,19 +27,6 @@ const WOOD: Record<number, string> = {
   10: '#956838',
 };
 
-const BLOCK_LABELS: Record<number, string> = {
-  1: 'Hauptblock',
-  2: 'kleiner Block oben links',
-  3: 'kleiner Block oben rechts',
-  4: 'vertikaler Block unten links',
-  5: 'vertikaler Block unten rechts',
-  6: 'horizontaler Block',
-  7: 'kleiner Block mitte links',
-  8: 'kleiner Block mitte rechts',
-  9: 'vertikaler Block oben links',
-  10: 'vertikaler Block oben rechts',
-};
-
 interface DragState {
   startX: number; startY: number;
   axis: 'h' | 'v' | null;
@@ -163,7 +150,14 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
   }
 
   const iconPad = 8;
-  const accessibleName = `${BLOCK_LABELS[block.id] ?? `Block ${block.id}`}${isSelected ? ', ausgewählt' : ''}`;
+  const shapeLabel = block.shape === 'square2'
+    ? 'Hauptblock'
+    : block.shape === 'single'
+      ? 'kleiner Block'
+      : block.shape === 'horizontal2'
+        ? 'horizontaler Wächter'
+        : 'vertikaler Wächter';
+  const accessibleName = `${shapeLabel} ${block.id}${isSelected ? ', ausgewählt' : ''}`;
 
   return (
     <div
@@ -211,7 +205,7 @@ export function GameBlock({ block, blocks, cellSize, isSelected, onSelect, onMov
         ].join(', '),
       }}
     >
-      <BlockIcon id={block.id} w={w - iconPad * 2} h={h - iconPad * 2} />
+      <BlockIcon id={block.id} shape={block.shape} w={w - iconPad * 2} h={h - iconPad * 2} />
     </div>
   );
 }

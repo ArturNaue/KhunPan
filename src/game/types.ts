@@ -18,6 +18,7 @@ export interface GameSnapshot {
 }
 
 export interface GameState {
+  startLayoutId: string;
   history: GameSnapshot[];
   historyIndex: number;
   bestMoves: number | null;
@@ -36,18 +37,14 @@ export const BOARD_COLS = 4;
 export const BOARD_ROWS = 5;
 export const EXIT_COLS = [1, 2];
 
-// Fachliche Start-Konstellation:
+// DEFAULT-Start-Konstellation:
 //   1 = id1                  2×2 Hauptblock bei row 3, col 1
 //   2 = id6                  horizontaler 2er bei row 2, col 1
 //   3 = id4, id5, id9, id10  vier vertikale 1×2-Blöcke
 //   4 = id2, id3, id7, id8   vier 1×1-Blöcke
 // Frei: row 0 col 1 und row 0 col 2 = Ausgang oben Mitte.
 //
-// Solver-Gruppen (gleiche Gruppe = austauschbar im kanonischen Key):
-//   A: id1                  fachlich 1, 2×2 Hauptblock, einzigartig
-//   B: id2, id3, id7, id8   fachlich 4, 1×1, austauschbar
-//   C: id4, id5, id9, id10  fachlich 3, vertikale 1×2, austauschbar
-//   D: id6                  fachlich 2, horizontaler 2er, einzigartig
+// Weitere Startvarianten dürfen die fünf 1×2-Wächter unterschiedlich drehen.
 export const INITIAL_BLOCKS: Block[] = [
   { id: 1,  shape: 'square2', row: 3, col: 1 },       // fachlich 1: Hauptblock
   { id: 2,  shape: 'single', row: 0, col: 0 },        // fachlich 4: 1×1 oben links

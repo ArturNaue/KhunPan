@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, currentSnapshot } from '../game/types';
 import { GameAction } from '../game/reducer';
+import { START_LAYOUTS } from '../game/startLayouts';
 
 interface Props {
   state: GameState;
@@ -50,6 +51,45 @@ export function Controls({ state, dispatch, onHint, onSolve, onCancelSolve, solv
       minWidth: compact ? 0 : 160,
       paddingTop: compact ? 0 : 8,
     }}>
+      {/* Start layout */}
+      <label style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        color: '#8A7055',
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+      }}>
+        Start
+        <select
+          value={state.startLayoutId}
+          disabled={isWorking}
+          onChange={event => dispatch({ type: 'SET_START_LAYOUT', startLayoutId: event.target.value })}
+          aria-label="Startvariante auswählen"
+          style={{
+            width: '100%',
+            borderRadius: 8,
+            border: '1px solid rgba(196,145,74,0.35)',
+            background: '#2A1A08',
+            color: '#E8C87A',
+            fontFamily: 'inherit',
+            fontSize: 13,
+            fontWeight: 600,
+            padding: compact ? '8px 10px' : '9px 10px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.35)',
+            cursor: isWorking ? 'default' : 'pointer',
+            opacity: isWorking ? 0.5 : 1,
+          }}
+        >
+          {START_LAYOUTS.map(layout => (
+            <option key={layout.id} value={layout.id}>
+              {layout.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {/* Stats card */}
       <div style={{
         background: 'rgba(196,145,74,0.12)',

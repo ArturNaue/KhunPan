@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyMove, canMove, isWon, moveAllTheWay } from './logic';
 import { INITIAL_BLOCKS, currentSnapshot, type Block, type Direction, type GameState } from './types';
 import { reducer } from './reducer';
+import { START_LAYOUTS } from './startLayouts';
 
 const dims: Record<Block['shape'], [number, number]> = {
   square2: [2, 2],
@@ -23,6 +24,7 @@ function occupiedCells(blocks: Block[]): string[] {
 
 function testState(blocks = INITIAL_BLOCKS): GameState {
   return {
+    startLayoutId: 'default',
     history: [{ blocks, moves: 0, selectedId: 1 }],
     historyIndex: 0,
     bestMoves: null,
@@ -61,6 +63,32 @@ describe('Khun Pan game rules', () => {
     expect(free).toEqual(['0,1', '0,2']);
     expect(INITIAL_BLOCKS.find(block => block.id === 1)).toMatchObject({ shape: 'square2', row: 3, col: 1 });
     expect(INITIAL_BLOCKS.find(block => block.id === 6)).toMatchObject({ shape: 'horizontal2', row: 2, col: 1 });
+  });
+
+  it('defines valid non-overlapping cells for every start layout', () => {
+    for (const layout of START_LAYOUTS) {
+      const occupied = occupiedCells(layout.blocks);
+
+      expect(layout.blocks).toHaveLength(10);
+      expect(new Set(layout.blocks.map(block => block.id)).size).toBe(10);
+      expect(new Set(occupied).size).toBe(18);
+      expect(occupied.every(cell => {
+        const [row, col] = cell.split(',').map(Number);
+        return row >= 0 && row < 5 && col >= 0 && col < 4;
+      })).toBe(true);
+    }
+  });
+
+  it('switches start layouts and resets the current layout', () => {
+    const changed = reducer(testState(), { type: 'SET_START_LAYOUT', startLayoutId: 'steps-7' });
+    expect(changed.startLayoutId).toBe('steps-7');
+    expect(currentSnapshot(changed).moves).toBe(0);
+    expect(currentSnapshot(changed).blocks).toBe(START_LAYOUTS.find(layout => layout.id === 'steps-7')?.blocks);
+
+    const moved = reducer(changed, { type: 'MOVE_BLOCK', blockId: 2, dir: 'RIGHT', steps: 1 });
+    const reset = reducer(moved, { type: 'RESET' });
+    expect(reset.startLayoutId).toBe('steps-7');
+    expect(currentSnapshot(reset).blocks).toBe(currentSnapshot(changed).blocks);
   });
 
   it('blocks board edges and collisions', () => {
